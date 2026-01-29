@@ -22,6 +22,7 @@ main(int argc, char **argv)
 	/* Pass 2: generate actual machine code */
 	asm_ctx.pass = 2;
 	asm_ctx.code_pos = 0;
+	asm_ctx.origin = 0;  /* Reset origin for pass 2 */
 	assemble_file(argv[1]);
 
 	/* Write output binary */

@@ -39,9 +39,19 @@ parse_number(const char *str, uint32_t *value)
 {
 	char *endptr;
 
+	/* Skip leading whitespace */
+	while (*str && isspace(*str))
+		str++;
+
+	/* Character literal ('A' or 'x') */
+	if (str[0] == '\'' && str[2] == '\'') {
+		*value = (uint8_t)str[1];
+		return 1;
+	}
+
 	/* Current position ($) */
 	if (strcmp(str, "$") == 0) {
-		*value = asm_ctx.code_pos;
+		*value = asm_ctx.code_pos + asm_ctx.origin;
 		return 1;
 	}
 
@@ -67,7 +77,7 @@ parse_number(const char *str, uint32_t *value)
 				i++;
 			} else if (expr[i] == '$') {
 				j += snprintf(processed + j, sizeof(processed) - j, 
-					      "%u", asm_ctx.code_pos);
+					      "%u", asm_ctx.code_pos + asm_ctx.origin);
 			} else {
 				processed[j++] = expr[i];
 			}
@@ -249,9 +259,18 @@ parse_operand(const char *str, operand_t *op)
 	uint32_t addr;
 	if (find_label(str, &addr)) {
 		op->type = OPERAND_IMM;
-		op->imm = addr;
+		op->imm = addr;  /* Already absolute */
 		return 1;
 	}
 
+	/* Forward reference - treat as immediate with value 0 for pass 1 */
+	if (asm_ctx.pass == 1) {
+		op->type = OPERAND_IMM;
+		op->imm = 0;
+		return 1;
+	}
+
+	/* Pass 2: unresolved reference is an error */
+	fprintf(stderr, "error: undefined symbol '%s'\n", str);
 	return 0;
 }

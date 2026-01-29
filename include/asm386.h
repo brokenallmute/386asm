@@ -19,6 +19,7 @@ typedef struct {
 	uint32_t code_pos;
 	uint32_t origin;
 	int pass;
+	int explicit_size;  /* 0=auto, 8=byte, 16=word, 32=dword */
 } assembler_t;
 
 typedef enum {

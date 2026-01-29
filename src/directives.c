@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "../include/asm386.h"
 
 /* Process assembler directive (.org, .db, .dw, etc) */
@@ -10,32 +12,48 @@ process_directive(char *directive, char *operands)
 		uint32_t addr;
 		if (parse_number(operands, &addr)) {
 			asm_ctx.origin = addr;
-			asm_ctx.code_pos = addr;
+		} else {
+			fprintf(stderr, "error: invalid .org address\n");
 		}
 	}
 	
 	/* .db - define byte(s) */
 	else if (strcmp(directive, ".db") == 0) {
-		char token[64];
-		while (*operands) {
-			operands = parse_token(operands, token, sizeof(token));
-			if (token[0] == '\0')
+		char *p = operands;
+		while (*p) {
+			/* Skip whitespace */
+			while (*p && isspace(*p))
+				p++;
+			if (!*p)
 				break;
 
-			/* String literal */
-			if (token[0] == '"' || token[0] == '\'') {
-				int len = strlen(token);
-				for (int i = 1; i < len - 1; i++) {
-					emit_byte(token[i]);
+			/* String literal - handle specially */
+			if (*p == '"' || *p == '\'') {
+				char quote = *p++;
+				while (*p && *p != quote) {
+					emit_byte(*p++);
 				}
+				if (*p == quote)
+					p++;
 			}
 			/* Numeric value */
 			else {
+				char token[64];
+				int i = 0;
+				while (*p && !isspace(*p) && *p != ',' && i < 63) {
+					token[i++] = *p++;
+				}
+				token[i] = '\0';
+				
 				uint32_t value;
 				if (parse_number(token, &value)) {
 					emit_byte(value);
 				}
 			}
+			
+			/* Skip comma */
+			while (*p && (isspace(*p) || *p == ','))
+				p++;
 		}
 	}
 	
@@ -96,6 +114,21 @@ process_directive(char *directive, char *operands)
 				char temp[512];
 				strncpy(temp, rest, sizeof(temp));
 				process_directive(".db", temp);
+			}
+		}
+	}
+	
+	/* .pad - pad to address */
+	else if (strcmp(directive, ".pad") == 0) {
+		uint32_t target;
+		if (parse_number(operands, &target)) {
+			/* Pad to target address */
+			uint32_t current = asm_ctx.origin + asm_ctx.code_pos;
+			if (target > current) {
+				uint32_t pad_bytes = target - current;
+				for (uint32_t i = 0; i < pad_bytes; i++) {
+					emit_byte(0x00);
+				}
 			}
 		}
 	}

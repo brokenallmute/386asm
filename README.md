@@ -10,6 +10,17 @@ Directives: `.org`, `.db`, `.dw`, `.dd`, `.align`, `.times`.
 
 Registers: 8-bit (`al`, `ah`, `bl`, `bh`, `cl`, `ch`, `dl`, `dh`), 16-bit (`ax`, `bx`, `cx`, `dx`, `sp`, `bp`, `si`, `di`), 32-bit (`eax`, `ebx`, `ecx`, `edx`, `esp`, `ebp`, `esi`, `edi`), segment (`cs`, `ds`, `es`, `fs`, `gs`, `ss`).
 
+## Features
+
+- Two-pass assembly for forward label references
+- Character literals (`'A'`, `'B'`, etc.)
+- Hexadecimal numbers (`0x1234`, `1234h`)
+- Decimal numbers
+- Label support with automatic offset calculation
+- Short and long jump optimization
+- Memory operands with displacement and scaling
+- Full 8/16/32-bit register support
+
 ## Build
 
 ```bash

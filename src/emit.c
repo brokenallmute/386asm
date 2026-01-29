@@ -58,6 +58,53 @@ emit_sib(int scale, int index, int base)
 void
 emit_memory_operand(int reg, operand_t *mem)
 {
+	/* 16-bit addressing mode */
+	if (mem->size == 16 || (mem->base >= 0 && mem->base <= 7 && mem->size != 32)) {
+		int mod = 0;
+		int rm = 0;
+
+		/* 16-bit addressing combinations */
+		if (mem->base == 3 && mem->index == 6) {  /* bx+si */
+			rm = 0;
+		} else if (mem->base == 3 && mem->index == 7) {  /* bx+di */
+			rm = 1;
+		} else if (mem->base == 5 && mem->index == 6) {  /* bp+si */
+			rm = 2;
+		} else if (mem->base == 5 && mem->index == 7) {  /* bp+di */
+			rm = 3;
+		} else if (mem->base == 6 && mem->index == -1) {  /* si */
+			rm = 4;
+		} else if (mem->base == 7 && mem->index == -1) {  /* di */
+			rm = 5;
+		} else if (mem->base == 5 && mem->index == -1) {  /* bp */
+			rm = 6;
+		} else if (mem->base == 3 && mem->index == -1) {  /* bx */
+			rm = 7;
+		} else {
+			rm = 6;  /* default to [bp+disp] */
+		}
+
+		/* Determine mod based on displacement */
+		if (mem->disp == 0 && rm != 6) {  /* bp always needs displacement */
+			mod = 0;
+		} else if (mem->disp >= -128 && mem->disp <= 127) {
+			mod = 1;
+		} else {
+			mod = 2;
+		}
+
+		emit_modrm(mod, reg, rm);
+
+		/* Emit displacement */
+		if (mod == 1) {
+			emit_byte(mem->disp);
+		} else if (mod == 2) {
+			emit_word(mem->disp);
+		}
+		return;
+	}
+
+	/* 32-bit addressing mode */
 	int mod = 0;
 	int rm = mem->base;
 

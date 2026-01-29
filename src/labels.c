@@ -18,7 +18,7 @@ add_label(const char *name, uint32_t address)
 	label_t *label = &asm_ctx.labels[asm_ctx.label_count++];
 	strncpy(label->name, name, sizeof(label->name) - 1);
 	label->name[sizeof(label->name) - 1] = '\0';
-	label->address = address;
+	label->address = asm_ctx.origin + address;
 }
 
 /* Find label address by name */
